@@ -30,6 +30,56 @@ function getFirebaseAuth() {
   return getAuth();
 }
 
+const authCookieOptions = (req) => {
+  const secure = process.env.NODE_ENV === "production" ||
+    req?.secure ||
+    req?.get("x-forwarded-proto")?.split(",")[0].trim() === "https";
+  return {
+  httpOnly: true,
+  secure,
+  sameSite: secure ? "none" : "lax",
+  path: "/",
+  maxAge: 24 * 60 * 60 * 1000,
+  };
+};
+
+function setAuthCookie(req, res, token) {
+  res.cookie("token", token, authCookieOptions(req));
+}
+
+exports.logoutUser = (req, res) => {
+  const clearOptions = authCookieOptions(req);
+  delete clearOptions.maxAge;
+  res.clearCookie("token", clearOptions);
+  return res.status(200).json({ success: true, message: "Logged out successfully." });
+};
+
+exports.getCurrentUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("name firstName lastName address phoneNumber email role isActive");
+    if (!user || user.isActive === false) {
+      return res.status(401).json({ success: false, message: "Your account is unavailable. Please log in again." });
+    }
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        _id: user._id,
+        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        address: user.address,
+        phoneNumber: user.phoneNumber,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Load current user failed:", error.message);
+    return res.status(500).json({ success: false, message: "Unable to restore your session." });
+  }
+};
+
 // Register a new user
 exports.registerUser = async (req, res) => {
   try {
@@ -123,11 +173,11 @@ exports.loginUser = async (req, res) => {
 }
 
     const token = createAppToken(user);
+    setAuthCookie(req, res, token);
 
     res.status(200).json({
       success: true,
       message: "Login successful",
-      token,
       user: {
         id: user._id,
         name: user.name,
@@ -254,10 +304,11 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
+    const token = createAppToken(user);
+    setAuthCookie(req, res, token);
     return res.status(200).json({
       success: true,
       message: "Google login successful",
-      token: createAppToken(user),
       user: {
         id: user._id,
         name: user.name,

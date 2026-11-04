@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const dns = require("dns");
 const path = require("path");
@@ -20,8 +21,22 @@ const categoryRoutes = require("./routes/category");
 const Category = require("./models/category");
 const defaultCategories = require("./utils/defaultCategories");
 
-app.use(cors());
+const allowedOrigins = new Set([
+  process.env.FRONTEND_URL,
+  "https://ji-kpop-frontend.onrender.com",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+].filter(Boolean).map((origin) => origin.replace(/\/$/, "")));
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin.replace(/\/$/, ""))) return callback(null, true);
+    return callback(new Error("Origin is not allowed by CORS."));
+  },
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
 app.use("/api/v1", authRoutes);
 app.use("/api/v1", productRoutes);
 app.use("/api/v1", userRoutes);
