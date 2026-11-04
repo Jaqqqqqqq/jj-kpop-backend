@@ -157,9 +157,8 @@ exports.forgotPassword = async (req, res) => {
     }
 
     const user = await User.findOne({ email }).select("+password");
-    // Keep the response identical whether or not this email belongs to an account.
     if (!user || !user.password || user.isActive === false) {
-      return res.status(200).json({ success: true, message: "If an account exists for that email, a password reset link has been sent." });
+      return res.status(404).json({ success: false, message: "No active password-based account was found for that email." });
     }
 
     const token = crypto.randomBytes(32).toString("hex");
@@ -191,7 +190,7 @@ exports.forgotPassword = async (req, res) => {
       throw emailError;
     }
 
-    return res.status(200).json({ success: true, message: "If an account exists for that email, a password reset link has been sent." });
+    return res.status(200).json({ success: true, message: "Password reset email sent. Check the Mailtrap inbox connected to this SMTP account." });
   } catch (error) {
     console.error("Password reset email failed:", error.message);
     return res.status(503).json({ success: false, message: "Unable to send a password reset email. Check the SMTP settings and try again." });
