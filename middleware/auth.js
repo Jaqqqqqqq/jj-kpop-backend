@@ -4,11 +4,8 @@ const User = require("../models/user");
 
 async function protect(req, res, next) {
   const authorization = req.headers.authorization;
-  const token = req.cookies?.token || (authorization?.startsWith("Bearer ")
-    ? authorization.slice("Bearer ".length)
-    : null);
 
-  if (!token) {
+  if (!authorization?.startsWith("Bearer ")) {
     return res.status(401).json({
       success: false,
       message: "Please log in to continue",
@@ -16,6 +13,7 @@ async function protect(req, res, next) {
   }
 
   try {
+    const token = authorization.slice("Bearer ".length);
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET ||
