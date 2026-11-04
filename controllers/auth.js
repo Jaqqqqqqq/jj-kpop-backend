@@ -153,7 +153,7 @@ exports.forgotPassword = async (req, res) => {
     if (!validator.isEmail(email)) {
       return res.status(400).json({ success: false, message: "Enter a valid email address." });
     }
-    const user = await User.findOne({ email, isActive: { $ne: false } });
+    const user = await User.findOne({ email, isActive: { $ne: false } }).select("+password");
     if (!user || !user.password) {
       return res.status(404).json({ success: false, message: "No active password-based account was found for that email." });
     }
