@@ -170,7 +170,7 @@ exports.forgotPassword = async (req, res) => {
       ? "https://ji-kpop-frontend.onrender.com"
       : "http://localhost:5173";
     const frontendUrl = (process.env.FRONTEND_URL || defaultFrontendUrl).replace(/\/$/, "");
-    const resetUrl = `${frontendUrl}/reset-password/${token}`;
+    const resetUrl = `${frontendUrl}/password/reset/${token}`;
     const html = `
       <div style="margin:0;padding:32px 12px;background:#fff6fa;font-family:Arial,Helvetica,sans-serif;color:#352536">
         <div style="max-width:560px;margin:auto;background:#fff;border:1px solid #f0dce5;border-radius:16px;overflow:hidden">
@@ -202,9 +202,13 @@ exports.forgotPassword = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
   try {
-    const { token, password } = req.body;
+    const token = req.params.token;
+    const { password, confirmPassword } = req.body;
     if (typeof token !== "string" || !token || typeof password !== "string" || password.length < 6) {
       return res.status(400).json({ success: false, message: "Enter a password with at least 6 characters." });
+    }
+    if (password !== confirmPassword) {
+      return res.status(400).json({ success: false, message: "Passwords do not match." });
     }
 
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
