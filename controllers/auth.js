@@ -166,7 +166,10 @@ exports.forgotPassword = async (req, res) => {
     user.passwordResetExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
 
-    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+    const defaultFrontendUrl = process.env.NODE_ENV === "production"
+      ? "https://ji-kpop-frontend.onrender.com"
+      : "http://localhost:5173";
+    const frontendUrl = (process.env.FRONTEND_URL || defaultFrontendUrl).replace(/\/$/, "");
     const resetUrl = `${frontendUrl}/reset-password/${token}`;
     const html = `
       <div style="margin:0;padding:32px 12px;background:#fff6fa;font-family:Arial,Helvetica,sans-serif;color:#352536">
